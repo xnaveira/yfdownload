@@ -1,0 +1,5 @@
+settings.yaml
+geckodriver.log
+.idea
+*/**
+*.pyc

@@ -1,12 +1,13 @@
-#YFDownload
-###Yahoo Groups Files Downloader
+ #YFDownload
+
+ ###Yahoo Groups Files Downloader
 
 I needed to download all the files in my yahoo group. There was a bunch of files distributed in several
 directories and subdirectories. https://github.com/csaftoiu/yahoo-groups-backup wasn't working
 for me and I just wanted the files mirrored in my filesystem so I made this script
 which was inspired by it.
 
-####How to use:
+ ####How to use:
 
 Create a virtual environment:
 
@@ -38,7 +39,7 @@ and invoke as:
 `./yfdownload.py -c file.yaml nameofthegroup`
 
 
-####DISCLAIMER:
+ ####DISCLAIMER:
 
 This script was quickly put together by a rusty python developer, error management and command line
 parsing is not very well thought of, use at your own risk.

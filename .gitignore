@@ -3,3 +3,4 @@ geckodriver.log
 .idea
 */**
 *.pyc
+auth.yaml

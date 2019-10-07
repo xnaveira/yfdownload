@@ -23,6 +23,7 @@ class YahooBackupScraper:
         self.password = password
         self.delay = delay
 
+        # self.br = splinter.Browser(driver)
         self.br = splinter.Browser(driver)
 
     def __del__(self):
@@ -31,12 +32,12 @@ class YahooBackupScraper:
     def _is_login_page(self):
         html = self.br.html
         output_print("Detecting the log-in page...")
-        return "Enter your&nbsp;email" in html and "Sign&nbsp;in" in html
+        return "login-username" in html
 
     def _is_oath_page(self):
         html = self.br.html
         output_print("Detecting oath...")
-        return "consent-wizard" in html
+        return "consent" in html
 
     def _process_login_page(self):
         """Process the login page."""
@@ -61,7 +62,7 @@ class YahooBackupScraper:
 
     def _process_oath_page(self):
         output_print("Processing the oath page...")
-        self.br.find_by_value("OK").click()
+        self.br.find_by_name("agree").click()
 
     def _visit_with_login(self, url):
         """Visit the given URL. Logs in if necessary."""
@@ -91,31 +92,32 @@ class YahooBackupScraper:
         # get all data-file attributes - these are the file entries
         data_files = []
         data_dirs = []
+        elements = self.br.find_by_xpath("//*[@data-file]")
 
-        for el in self.br.find_by_xpath("//*[@data-file]"):
+        for el in elements:
             data = json.loads('{' + el['data-file'].encode('utf8').decode('unicode_escape') + '}')
             if data['fileType'] == 'd':
                 data_dirs.append(data)
             elif data['fileType'] == 'f':
+                data['url'] = el.find_by_tag('a')[0]._element.get_attribute('href')
+                data['profile'] = el._element.find_element_by_class_name('yg-list-auth').text
+                data['the_date'] = dateutil.parser.parse(el._element.find_element_by_class_name('yg-list-date').text)
                 data_files.append(data)
             else:
                 raise NotImplementedError("Unknown fileType %s, data was %s" % (
                     data['fileType'], json.dumps(data),
                 ))
 
-        for data in data_files:
-            url = el.find_by_tag('a')[0]._element.get_attribute('href')
-            profile = el._element.find_element_by_class_name('yg-list-auth').text
-            date_str = el._element.find_element_by_class_name('yg-list-date').text
-            the_date = dateutil.parser.parse(date_str)
 
+
+        for data in data_files:
             yield {
                 'filePath': urllib.parse.unquote(data['filePath']),
-                'url': url,
+                'url': data['url'],
                 'mime': data['mime'],
                 'size': float(data['size']),
-                'profile': profile,
-                'date': the_date,
+                'profile': data['profile'],
+                'date': data['the_date'],
                 'fileType': 'f'
             }
 

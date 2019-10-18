@@ -3,7 +3,9 @@
 import os
 import sys
 import yaml
-import requests
+
+import certifi
+import urllib3
 
 from output import output_print, Level
 from clint.arguments import Args
@@ -11,6 +13,8 @@ from clint.arguments import Args
 from scraper import YahooBackupScraper
 
 if __name__ == '__main__':
+    http = urllib3.PoolManager(cert_reqs='CERT_REQUIRED',
+        ca_certs=certifi.where(), timeout=4, retries=3)
     args = Args()
 
     output_print('Arguments: {}'.format(args.all))
@@ -24,7 +28,7 @@ Put login: yourlogin and password: yourpassword in file.yaml', Level.ERROR)
         config_file = dict(args.grouped)['-c'][0]
         output_print('Reading credentials from {}'.format(config_file))
         with open(config_file, 'r') as contents:
-            config = yaml.load(contents)
+            config = yaml.load(contents, Loader=yaml.BaseLoader)
         yahoo_group = args.all[2]
         try:
             scraper = YahooBackupScraper(
@@ -55,8 +59,8 @@ Put login: yourlogin and password: yourpassword in file.yaml', Level.ERROR)
                 os.makedirs(yahoo_group + file_info['filePath'], exist_ok=True)
                 output_print('{} created'.format(file_info['filePath']), Level.SUCCESS)
             elif file_info['fileType'] == 'f':
-                r = requests.get(file_info['url'], verify=False)
-                open(yahoo_group + file_info['filePath'], 'wb').write(r.content)
+                r = http.request('GET', file_info['url'])
+                open(yahoo_group + file_info['filePath'], 'wb').write(r.data)
                 output_print('{} downloaded'.format(file_info['filePath']), Level.SUCCESS)
             else:
                 output_print('Unknown type in file: {}'.format(file_info), Level.ERROR)

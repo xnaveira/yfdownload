@@ -24,19 +24,17 @@ class YahooBackupScraper:
         self.delay = delay
 
         # self.br = splinter.Browser(driver)
-        self.br = splinter.Browser(driver)
+        self.br = splinter.Browser(driver, headless=True, capabilities={'acceptSslCerts': True})
 
     def __del__(self):
         self.br.quit()
 
     def _is_login_page(self):
         html = self.br.html
-        output_print("Detecting the log-in page...")
         return "login-username" in html
 
     def _is_oath_page(self):
         html = self.br.html
-        output_print("Detecting oath...")
         return "consent" in html
 
     def _process_login_page(self):
@@ -60,9 +58,17 @@ class YahooBackupScraper:
         # Wait ...
         time.sleep(2)
 
+        # Skip prompt to add mobile number to account
+        if self.br.is_text_present("Remind me later"):
+            self.br.find_link_by_text("Remind me later").click()
+            time.sleep(2)
+
     def _process_oath_page(self):
         output_print("Processing the oath page...")
-        self.br.find_by_name("agree").click()
+        try:
+            self.br.find_by_name("agree").click()
+        except (IndexError, AttributeError, splinter.exceptions.ElementDoesNotExist) as e:
+            pass
 
     def _visit_with_login(self, url):
         """Visit the given URL. Logs in if necessary."""
@@ -71,9 +77,11 @@ class YahooBackupScraper:
         time.sleep(1)
 
         if self._is_oath_page():
+            output_print("Detecting oath...")
             self._process_oath_page()
 
         if self._is_login_page():
+            output_print("Detecting the log-in page...")
             self._process_login_page()
             # get the page again
             self.br.visit(url)
